@@ -77,7 +77,7 @@ module.exports = function addInstrumentation(name, input) {
     'var __odLogStmt = window.Instrumentor.logStatement' + bind + ';\n' +
     'var __odLogFnStart = window.Instrumentor.logFunctionStart' + bind + ';\n' +
     'var __odLogFnEnd = window.Instrumentor.logFunctionEnd' + bind + ';\n' +
-    'var __odLogErr = window.Instrumentor.logError;\n' +
+    'var __odLogErr = window.Instrumentor.logError.bind(window.Instrumentor);\n' +
     instrumentedExecutable;
 
   return instrumentedExecutable;
