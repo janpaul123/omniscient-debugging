@@ -1,0 +1,16 @@
+{
+  "name": "omniscient-debugging",
+  "version": "0.0.1",
+  "description": "Omniscient Debugging experiment",
+  "main": "addInstrumentation.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janpaul123/omniscient-debugging.git"
+  },
+  "author": "Jan Paul Posma",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/janpaul123/omniscient-debugging/issues"
+  },
+  "homepage": "https://github.com/janpaul123/omniscient-debugging#readme"
+}
