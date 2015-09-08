@@ -12,5 +12,11 @@
   "bugs": {
     "url": "https://github.com/janpaul123/omniscient-debugging/issues"
   },
-  "homepage": "https://github.com/janpaul123/omniscient-debugging#readme"
+  "homepage": "https://github.com/janpaul123/omniscient-debugging#readme",
+  "peerDependencies": {
+    "chroma-js": "^1.1.1",
+    "falafel": "^1.2.0",
+    "react": "^0.13.0",
+    "underscore": "^1.8.3"
+  }
 }
