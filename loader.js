@@ -9,5 +9,5 @@ module.exports = function loader(content) {
 };
 
 // TODO: Add eval method in documentation later:
-// return "eval(require('omniscient_debugging\/entry.jsx')('" +
+// return "eval(require('omniscient-debugging\/entry.jsx')('" +
 //   this.resourcePath + "', () => {\n" + content + '}));\n';

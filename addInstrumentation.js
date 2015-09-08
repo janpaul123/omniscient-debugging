@@ -71,7 +71,7 @@ module.exports = function addInstrumentation(name, input) {
   var bind = '.bind(window.Instrumentor, ' + JSON.stringify(name) + ')';
 
   instrumentedExecutable =
-    'require("omniscient_debugging/instrumentor");\n' +
+    'require("babel-loader!omniscient-debugging/instrumentor");\n' +
     'window.Instrumentor.addSnippet(' + JSON.stringify(name) +
       ', ' + JSON.stringify(executable) + ');\n' +
     'var __odLogStmt = window.Instrumentor.logStatement' + bind + ';\n' +
