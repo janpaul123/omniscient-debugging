@@ -1,5 +1,5 @@
 const React = require('react/addons');
-const { uniqueId, where } = require('underscore');
+const { indexOf, uniqueId, where } = require('underscore');
 const chroma = require('chroma-js/chroma');
 
 const { PropTypes } = React;
@@ -29,6 +29,126 @@ function stringToColor(string, opacity=1) {
   }
   return chroma.hcl(number, 100, 85).alpha(opacity).css();
 }
+
+const InstrumentorCodeEvent = React.createClass({
+  propTypes: {
+    background: PropTypes.string,
+    endLine: PropTypes.number.isRequired,
+    leftPosition: PropTypes.number.isRequired,
+    localEventIndex: PropTypes.number.isRequired,
+    onLocalEventIndexChange: PropTypes.func.isRequired,
+    startLine: PropTypes.number.isRequired,
+  },
+
+  mixins: [
+    PureRenderMixin,
+  ],
+
+  _handleOnMouseEnter() {
+    this.props.onLocalEventIndexChange(this.props.localEventIndex);
+  },
+
+  _handleOnMouseLeave() {
+    this.props.onLocalEventIndexChange(null);
+  },
+
+  render() {
+    return (
+      <div
+        style={{
+          width: 3,
+          height: 15 * (this.props.endLine - this.props.startLine + 1),
+          position: 'absolute',
+          left: this.props.leftPosition,
+          top: 15 * this.props.startLine,
+          background: this.props.background,
+        }}
+        onMouseEnter={this._handleOnMouseEnter}
+        onMouseLeave={this._handleOnMouseLeave}
+      />
+    );
+  },
+});
+
+const InstrumentorCodeEvents = React.createClass({
+  propTypes: {
+    activeEventIndex: PropTypes.number.isRequired,
+    eventsInSnippet: PropTypes.array.isRequired,
+    localEventIndex: PropTypes.number,
+    onLocalEventIndexChange: PropTypes.func.isRequired,
+  },
+
+  mixins: [
+    PureRenderMixin,
+  ],
+
+  componentDidUpdate() {
+    this._scrollToActiveEvent();
+  },
+
+  _scrollToActiveEvent() {
+    if (this.refs.events && this.refs.activeEvent) {
+      const eventsElement = React.findDOMNode(this.refs.events);
+      const activeEventElement = React.findDOMNode(this.refs.activeEvent);
+
+      eventsElement.scrollLeft =
+        activeEventElement.offsetLeft - eventsElement.clientWidth / 2;
+    }
+  },
+
+  render() {
+    // TODO: add some pagination or so
+    const EVENTS_SHOWN = 400;
+    const localEventIndexOfActiveEvent = indexOf(this.props.eventsInSnippet
+      .map(event => event.index), this.props.activeEventIndex, true);
+    const firstLocalEventIndex =
+      Math.max(0, localEventIndexOfActiveEvent - (500 / 2));
+    const displayedEvents = this.props.eventsInSnippet
+      .slice(firstLocalEventIndex, firstLocalEventIndex + 500);
+
+    let eventLeftPosition = 500;
+
+    return (
+      <div
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          overflowX: 'scroll' }}
+        ref='events'
+      >
+        {displayedEvents.map((event, displayedEventIndex) => {
+          const localEventIndex = displayedEventIndex + firstLocalEventIndex;
+
+          eventLeftPosition += 3;
+
+          const nextEvent = this.props.eventsInSnippet[localEventIndex + 1];
+          if (nextEvent && nextEvent.index > event.index + 1) {
+            eventLeftPosition += 3 +
+              Math.max(12, Math.round((nextEvent.index - event.index) / 1000));
+          }
+
+          let background = 'rgba(0,0,0,0.07)';
+          if (localEventIndex === this.props.localEventIndex) {
+            background = 'yellow';
+          } else if (event.index === this.props.activeEventIndex) {
+            background = 'orange';
+          }
+
+          return (
+            <InstrumentorCodeEvent
+              background={background}
+              endLine={event.endLine}
+              key={event.index}
+              leftPosition={eventLeftPosition}
+              localEventIndex={localEventIndex}
+              onLocalEventIndexChange={this.props.onLocalEventIndexChange}
+              ref={event.index === this.props.activeEventIndex && 'activeEvent'}
+              startLine={event.startLine}
+            />
+          );
+        })}
+      </div>
+    );
+  },
+});
 
 const InstrumentorCode = React.createClass({
   propTypes: {
@@ -64,8 +184,15 @@ const InstrumentorCode = React.createClass({
     setTimeout(() => this.forceUpdate());
   },
 
-  componentDidUpdate() {
-    this._scrollToFirstLine();
+  componentDidUpdate(prevProps) {
+    if (prevProps.snippetSplitByLines !== this.props.snippetSplitByLines ||
+        prevProps.activeEvent.index !== this.props.activeEvent.index) {
+      this._scrollToFirstLine();
+    }
+  },
+
+  _handleLocalEventIndexChange(localIndex) {
+    this.setState({ internalLocalEventIndex: localIndex })
   },
 
   _scrollToFirstLine() {
@@ -75,13 +202,6 @@ const InstrumentorCode = React.createClass({
 
       fileElement.scrollTop =
         firstLineElement.offsetTop - fileElement.clientHeight / 2;
-    }
-    if (this.refs.events && this.refs.activeEvent) {
-      const eventsElement = React.findDOMNode(this.refs.events);
-      const activeEventElement = React.findDOMNode(this.refs.activeEvent);
-
-      eventsElement.scrollLeft =
-        activeEventElement.offsetLeft - eventsElement.clientWidth / 2;
     }
   },
 
@@ -123,8 +243,6 @@ const InstrumentorCode = React.createClass({
   },
 
   render() {
-    let eventLeftPosition = 500;
-
     return (
       <div
         style={{ height: '100%', display: 'flex', flexDirection: 'column',
@@ -175,48 +293,12 @@ const InstrumentorCode = React.createClass({
                 {code}
               </div>
             )}
-            <div
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                overflowX: 'scroll' }}
-              ref='events'
-            >
-              {this.props.eventsInSnippet.map((event, localIndex) => {
-                eventLeftPosition += 3;
-
-                const nextEvent = this.props.eventsInSnippet[localIndex + 1];
-                if (nextEvent && nextEvent.index > event.index + 1) {
-                  eventLeftPosition += 3 +
-                    Math.max(12, Math.round((nextEvent.index - event.index) / 1000));
-                }
-
-                let background = 'rgba(0,0,0,0.07)';
-                if (localIndex === this.state.internalLocalEventIndex) {
-                  background = 'yellow';
-                } else if (event.index === this.props.activeEvent.index) {
-                  background = 'orange';
-                }
-
-                return (
-                  <div
-                    key={event.index}
-                    style={{
-                      width: 3,
-                      height: 15 * (event.endLine - event.startLine + 1),
-                      position: 'absolute',
-                      left: eventLeftPosition,
-                      top: 15 * event.startLine,
-                      background,
-                    }}
-                    ref={event.index === this.props.activeEvent.index &&
-                      'activeEvent'}
-                    onMouseEnter={() =>
-                      this.setState({ internalLocalEventIndex: localIndex })}
-                    onMouseLeave={() =>
-                      this.setState({ internalLocalEventIndex: null })}
-                  />
-                );
-              })}
-            </div>
+            <InstrumentorCodeEvents
+              activeEventIndex={this.props.activeEvent.index}
+              eventsInSnippet={this.props.eventsInSnippet}
+              localEventIndex={this.state.internalLocalEventIndex}
+              onLocalEventIndexChange={this._handleLocalEventIndexChange}
+            />
           </div>
         </div>
       </div>
