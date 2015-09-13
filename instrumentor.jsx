@@ -488,12 +488,16 @@ const InstrumentorOverview = React.createClass({
 const InstrumentorSummary = React.createClass({
   getInitialState() {
     return {
-      opened: false,
+      openedLog: null,
     };
   },
 
   componentDidMount() {
     setInterval(() => this.forceUpdate(), 100);
+  },
+
+  _handleOverviewClose() {
+    this.setState({ openedLog: null });
   },
 
   render() {
@@ -511,7 +515,7 @@ const InstrumentorSummary = React.createClass({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div onClick={() => this.setState({ opened: true })}>
+        <div onClick={() => this.setState({ openedLog: fullLog })}>
           {fullLog.events
             .filter(event => event.stackingLevel === 0)
             .map(event =>
@@ -526,10 +530,10 @@ const InstrumentorSummary = React.createClass({
               />
           )}
         </div>
-        {this.state.opened &&
+        {this.state.openedLog &&
           <InstrumentorOverview
-            fullLog={fullLog}
-            onClose={() => this.setState({ opened: false })}
+            fullLog={this.state.openedLog}
+            onClose={this._handleOverviewClose}
           />
         }
       </div>
