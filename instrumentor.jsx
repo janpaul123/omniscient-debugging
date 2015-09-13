@@ -382,10 +382,14 @@ const InstrumentorStackedMapPoint = React.createClass({
     let moreSearchResultsInSubEvents = false;
     if (this.props.searchFilter.length > 0 &&
         subEvents.length > 0 && !shouldShowSubEvents) {
-      // .key is still a hack here...
-      for (let index = event.index + 1;
-          index <= subEvents[subEvents.length - 1].key; index++) {
-        if (searchFilterRegex.test(events[index].snippetName)) {
+      for (let index = event.index + 1; index < events.length; index++) {
+        const subEvent = events[index];
+
+        if (subEvent.stackingLevel <= event.stackingLevel) {
+          break;
+        }
+
+        if (searchFilterRegex.test(subEvent.snippetName)) {
           moreSearchResultsInSubEvents = true;
           break;
         }
