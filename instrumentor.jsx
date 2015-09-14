@@ -669,7 +669,12 @@ const Instrumentor = {
         _stackingSnippetNameAndLine.length - 1] !== snippetName + ':' + startLine) {
       // probably an error was thrown somewhere
       const missedCall = this._stackingSnippetNameAndLine.pop();
-      window.console.warn('Instrumentor.logFunctionEnd missed: ' + missedCall);
+
+      const warning = 'Instrumentor.logFunctionEnd missed: ' + missedCall;
+      const errorSnippetName = uniqueId('internalWarning');
+      this.addSnippet(errorSnippetName, warning);
+      this.logStatement(errorSnippetName, 0);
+      window.console.warn(warning);
     }
     this._stackingSnippetNameAndLine.pop();
     return result;
@@ -680,6 +685,7 @@ const Instrumentor = {
     this.addSnippet(errorSnippetName, error.stack);
     this.logStatement(errorSnippetName, 0);
 
+    window.console.error('Instrumentor found error (possibly caught):', error);
     throw error;
   },
 
