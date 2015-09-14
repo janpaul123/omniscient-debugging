@@ -671,9 +671,9 @@ const Instrumentor = {
       const missedCall = this._stackingSnippetNameAndLine.pop();
 
       const warning = 'Instrumentor.logFunctionEnd missed: ' + missedCall;
-      const errorSnippetName = uniqueId('internalWarning');
-      this.addSnippet(errorSnippetName, warning);
-      this.logStatement(errorSnippetName, 0);
+      const warningSnippetName = uniqueId('internalWarning');
+      this.addSnippet(warningSnippetName, warning);
+      this.logStatement(warningSnippetName, 0, 0, 0, 0);
       window.console.warn(warning);
     }
     this._stackingSnippetNameAndLine.pop();
@@ -683,7 +683,7 @@ const Instrumentor = {
   logError(error) {
     const errorSnippetName = uniqueId('error');
     this.addSnippet(errorSnippetName, error.stack);
-    this.logStatement(errorSnippetName, 0);
+    this.logStatement(errorSnippetName, 0, 0, 0, 0);
 
     window.console.error('Instrumentor found error (possibly caught):', error);
     throw error;
@@ -742,7 +742,33 @@ const Instrumentor = {
 };
 
 if (!window.Instrumentor) {
+  // window.Instrumentor is accessible to any code, but you're not supposed to
+  // call functions on it. Instead use window.instrumentCodeGroup (see below).
   window.Instrumentor = Instrumentor;
+
+  window.instrumentCodeGroup = (name, description='', callback=null) => {
+    const snippetName = 'window.instrumentCodeGroup(' + name + ')';
+    window.Instrumentor.addSnippet(snippetName, description);
+
+    if (callback) {
+      window.Instrumentor.logFunctionStart(snippetName, 0, 0, 0, 0);
+      window.Instrumentor.logFunctionEnd(snippetName, 0, 0, 0, 0, callback());
+    } else {
+      window.Instrumentor.logStatement(snippetName, 0, 0, 0, 0);
+    }
+  }
+
+  // Only use specifically when wrapping a top-level call, because otherwise
+  // asynchronism doesn't work.
+  window.instrumentCodeGroupAsyncTopLevel = (name, description, callback) => {
+    const snippetName = 'window.instrumentCodeGroupAsync(' + name + ')';
+    window.Instrumentor.addSnippet(snippetName, description);
+
+    window.Instrumentor.logFunctionStart(snippetName, 0, 0, 0, 0);
+    const result = callback();
+    window.setTimeout(() => window.Instrumentor
+      .logFunctionEnd(snippetName, 0, 0, 0, 0, result), 0);
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
     const container = document.createElement('div');
