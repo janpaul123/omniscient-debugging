@@ -291,6 +291,9 @@ const InstrumentorCode = React.createClass({
                 ref={line === this.props.activeEvent.startLine && 'firstLine'}
               >
                 {code}
+                {line === this.props.activeEvent.startLine &&
+                  this.props.activeEvent.annotations &&
+                    ' // ' + this.props.activeEvent.annotations}
               </div>
             )}
             <InstrumentorCodeEvents
