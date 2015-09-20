@@ -37,6 +37,7 @@ const InstrumentorCodeEvent = React.createClass({
     leftPosition: PropTypes.number.isRequired,
     localEventIndex: PropTypes.number.isRequired,
     onLocalEventIndexChange: PropTypes.func.isRequired,
+    onLocalEventClick: PropTypes.func.isRequired,
     startLine: PropTypes.number.isRequired,
   },
 
@@ -52,6 +53,10 @@ const InstrumentorCodeEvent = React.createClass({
     this.props.onLocalEventIndexChange(null);
   },
 
+  _handleOnClick() {
+    this.props.onLocalEventClick(this.props.localEventIndex);
+  },
+
   render() {
     return (
       <div
@@ -63,6 +68,7 @@ const InstrumentorCodeEvent = React.createClass({
           top: 15 * this.props.startLine,
           background: this.props.background,
         }}
+        onClick={this._handleOnClick}
         onMouseEnter={this._handleOnMouseEnter}
         onMouseLeave={this._handleOnMouseLeave}
       />
@@ -75,6 +81,7 @@ const InstrumentorCodeEvents = React.createClass({
     activeEventIndex: PropTypes.number.isRequired,
     eventsInSnippet: PropTypes.array.isRequired,
     localEventIndex: PropTypes.number,
+    onSelectActive: PropTypes.func.isRequired,
     onLocalEventIndexChange: PropTypes.func.isRequired,
   },
 
@@ -94,6 +101,11 @@ const InstrumentorCodeEvents = React.createClass({
       eventsElement.scrollLeft =
         activeEventElement.offsetLeft - eventsElement.clientWidth / 2;
     }
+  },
+
+  _handleLocalEventClick(localEventIndex) {
+    this.props.onSelectActive(
+      this.props.eventsInSnippet[localEventIndex].index);
   },
 
   render() {
@@ -139,6 +151,7 @@ const InstrumentorCodeEvents = React.createClass({
               key={event.index}
               leftPosition={eventLeftPosition}
               localEventIndex={localEventIndex}
+              onLocalEventClick={this._handleLocalEventClick}
               onLocalEventIndexChange={this.props.onLocalEventIndexChange}
               ref={event.index === this.props.activeEventIndex && 'activeEvent'}
               startLine={event.startLine}
@@ -163,6 +176,7 @@ const InstrumentorCode = React.createClass({
       endColumn: PropTypes.number.isRequired,
     }).isRequired,
     eventsInSnippet: PropTypes.array.isRequired,
+    onSelectActive: PropTypes.func.isRequired,
   },
 
   mixins: [
@@ -301,6 +315,7 @@ const InstrumentorCode = React.createClass({
               eventsInSnippet={this.props.eventsInSnippet}
               localEventIndex={this.state.internalLocalEventIndex}
               onLocalEventIndexChange={this._handleLocalEventIndexChange}
+              onSelectActive={this.props.onSelectActive}
             />
           </div>
         </div>
@@ -327,6 +342,47 @@ const InstrumentorStackedMapPoint = React.createClass({
       expanded: false,
       moreLinkHovering: false,
     };
+  },
+
+  componentWillMount() {
+    const events = this.props.fullLog.events;
+    const event = events[this.props.eventIndex];
+    for (let index = event.index + 1; index < events.length; index++) {
+      if (events[index].stackingLevel <= event.stackingLevel) {
+        this._lastEventIndexBelowThis = index - 1;
+        break;
+      }
+    }
+    this._expandIfLockedEventIndexIsBelowThis(this.props.lockedEventIndex);
+  },
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.lockedEventIndex !== this.props.lockedEventIndex) {
+      this._expandIfLockedEventIndexIsBelowThis(nextProps.lockedEventIndex);
+    }
+  },
+
+  componentDidMount() {
+    this._scrollIntoViewIfNeeded();
+  },
+
+  componentDidUpdate() {
+    this._scrollIntoViewIfNeeded();
+  },
+
+  _expandIfLockedEventIndexIsBelowThis(lockedEventIndex) {
+    if (lockedEventIndex > this.props.eventIndex &&
+        lockedEventIndex <= this._lastEventIndexBelowThis) {
+      this.setState({ expanded: true });
+    }
+  },
+
+  _scrollIntoViewIfNeeded() {
+    if (this.props.eventIndex === this.props.lockedEventIndex) {
+      if (document.body.scrollIntoViewIfNeeded) {
+        React.findDOMNode(this).scrollIntoViewIfNeeded(true);
+      }
+    }
   },
 
   _handleMoreLinkMouseEnter() {
@@ -385,14 +441,8 @@ const InstrumentorStackedMapPoint = React.createClass({
     let moreSearchResultsInSubEvents = false;
     if (this.props.searchFilter.length > 0 &&
         subEvents.length > 0 && !shouldShowSubEvents) {
-      for (let index = event.index + 1; index < events.length; index++) {
-        const subEvent = events[index];
-
-        if (subEvent.stackingLevel <= event.stackingLevel) {
-          break;
-        }
-
-        if (searchFilterRegex.test(subEvent.snippetName)) {
+      for (let index = event.index + 1; index <= this._lastEventIndexBelowThis; index++) {
+        if (searchFilterRegex.test(events[index].snippetName)) {
           moreSearchResultsInSubEvents = true;
           break;
         }
@@ -533,6 +583,10 @@ const InstrumentorOverview = React.createClass({
     );
   },
 
+  _handleSelectActiveCode(index) {
+    this.setState({ activeEventIndex: index, lockedEventIndex: index });
+  },
+
   render() {
     let activeEvent =
       this.state.activeEventIndex !== null &&
@@ -567,6 +621,7 @@ const InstrumentorOverview = React.createClass({
               eventsBySnippet[activeEvent.snippetName]}
             key={this.props.fullLog.
               eventsBySnippet[activeEvent.snippetName].length}
+            onSelectActive={this._handleSelectActiveCode}
           />
         }
       </div>
