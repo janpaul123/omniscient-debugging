@@ -325,16 +325,16 @@ const InstrumentorStackedMapPoint = React.createClass({
   getInitialState() {
     return {
       expanded: false,
-      moreLinkeHovering: false,
+      moreLinkHovering: false,
     };
   },
 
   _handleMoreLinkMouseEnter() {
-    this.setState({ moreLinkeHovering: true });
+    this.setState({ moreLinkHovering: true });
   },
 
   _handleMoreLinkMouseLeave() {
-    this.setState({ moreLinkeHovering: false });
+    this.setState({ moreLinkHovering: false });
   },
 
   _handleBlockMouseEnter() {
@@ -433,7 +433,7 @@ const InstrumentorStackedMapPoint = React.createClass({
               font: '10px/1 Helvetica',
               margin: '0 4px',
               color: moreSearchResultsInSubEvents ? '#000' : '#aaa',
-              fontWeight: this.state.moreLinkeHovering ? 'bold' : 'normal'
+              fontWeight: this.state.moreLinkHovering ? 'bold' : 'normal'
             }}
             onMouseEnter={this._handleMoreLinkMouseEnter}
             onMouseLeave={this._handleMoreLinkMouseLeave}
