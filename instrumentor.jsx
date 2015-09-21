@@ -81,7 +81,7 @@ const InstrumentorCodeEvents = React.createClass({
     activeEventIndex: PropTypes.number.isRequired,
     eventsInSnippet: PropTypes.array.isRequired,
     localEventIndex: PropTypes.number,
-    onSelectActive: PropTypes.func.isRequired,
+    onSelectLocked: PropTypes.func.isRequired,
     onLocalEventIndexChange: PropTypes.func.isRequired,
   },
 
@@ -104,7 +104,7 @@ const InstrumentorCodeEvents = React.createClass({
   },
 
   _handleLocalEventClick(localEventIndex) {
-    this.props.onSelectActive(
+    this.props.onSelectLocked(
       this.props.eventsInSnippet[localEventIndex].index);
   },
 
@@ -175,19 +175,23 @@ const InstrumentorCode = React.createClass({
       endLine: PropTypes.number.isRequired,
       endColumn: PropTypes.number.isRequired,
     }).isRequired,
+    activeEventInCode: PropTypes.shape({
+      annotations: PropTypes.string,
+      snippetName: PropTypes.string.isRequired,
+      index: PropTypes.number.isRequired,
+      startLine: PropTypes.number.isRequired,
+      startColumn: PropTypes.number.isRequired,
+      endLine: PropTypes.number.isRequired,
+      endColumn: PropTypes.number.isRequired,
+    }),
     eventsInSnippet: PropTypes.array.isRequired,
-    onSelectActive: PropTypes.func.isRequired,
+    onSelectActiveInCode: PropTypes.func.isRequired,
+    onSelectLocked: PropTypes.func.isRequired,
   },
 
   mixins: [
     PureRenderMixin,
   ],
-
-  getInitialState() {
-    return {
-      internalLocalEventIndex: null,
-    };
-  },
 
   componentDidMount() {
     this._scrollToFirstLine();
@@ -206,7 +210,12 @@ const InstrumentorCode = React.createClass({
   },
 
   _handleLocalEventIndexChange(localIndex) {
-    this.setState({ internalLocalEventIndex: localIndex })
+    if (localIndex !== null) {
+      this.props.onSelectActiveInCode(
+        this.props.eventsInSnippet[localIndex].index);
+    } else {
+      this.props.onSelectActiveInCode(null);
+    }
   },
 
   _scrollToFirstLine() {
@@ -287,9 +296,8 @@ const InstrumentorCode = React.createClass({
         </div>
         <div style={{ height: '100%', overflowY: 'scroll' }} ref='file'>
           <div style={{ position: 'relative' }}>
-            {this.state.internalLocalEventIndex !== null &&
-              this._renderHighlights('yellow',
-                this.props.eventsInSnippet[this.state.internalLocalEventIndex])}
+            {this.props.activeEventInCode &&
+              this._renderHighlights('yellow', this.props.activeEventInCode)}
             {this._renderHighlights('orange', this.props.activeEvent)}
             {this.props.snippetSplitByLines.map((code, line) =>
               <div
@@ -313,9 +321,11 @@ const InstrumentorCode = React.createClass({
             <InstrumentorCodeEvents
               activeEventIndex={this.props.activeEvent.index}
               eventsInSnippet={this.props.eventsInSnippet}
-              localEventIndex={this.state.internalLocalEventIndex}
+              localEventIndex={this.props.activeEventInCode &&
+                indexOf(this.props.eventsInSnippet.map(event => event.index),
+                  this.props.activeEventInCode.index, true)}
               onLocalEventIndexChange={this._handleLocalEventIndexChange}
-              onSelectActive={this.props.onSelectActive}
+              onSelectLocked={this.props.onSelectLocked}
             />
           </div>
         </div>
@@ -326,6 +336,7 @@ const InstrumentorCode = React.createClass({
 
 const InstrumentorStackedMapPoint = React.createClass({
   propTypes: {
+    activeEventInCodeIndex: PropTypes.number,
     eventIndex: PropTypes.number.isRequired,
     fullLog: PropTypes.object.isRequired,
     onSelectActive: PropTypes.func.isRequired,
@@ -449,6 +460,12 @@ const InstrumentorStackedMapPoint = React.createClass({
       }
     }
 
+    const showEventInCodeGlow =
+      this.props.activeEventInCodeIndex === this.props.eventIndex ||
+      (!shouldShowSubEvents &&
+        this.props.activeEventInCodeIndex > this.props.eventIndex &&
+        this.props.activeEventInCodeIndex <= this._lastEventIndexBelowThis);
+
     return (
       <div
         style={{
@@ -468,6 +485,8 @@ const InstrumentorStackedMapPoint = React.createClass({
             marginBottom: 2,
             border: this.props.lockedEventIndex === this.props.eventIndex ?
               '1px solid black' : 'none',
+            boxShadow: showEventInCodeGlow ? '0 0 5px 5px yellow' : '',
+            zIndex: showEventInCodeGlow ? 1 : 0,
           }}
           onMouseEnter={this._handleBlockMouseEnter}
         />
@@ -500,6 +519,7 @@ const InstrumentorStackedMapPoint = React.createClass({
 
 const InstrumentorStackedMap = React.createClass({
   propTypes: {
+    activeEventInCodeIndex: PropTypes.number,
     fullLog: PropTypes.object.isRequired,
     onSelectActive: PropTypes.func.isRequired,
     lockedEventIndex: PropTypes.number,
@@ -542,6 +562,7 @@ const InstrumentorStackedMap = React.createClass({
         >
           {where(this.props.fullLog.events, { stackingLevel: 0 }).map(event =>
             <InstrumentorStackedMapPoint
+              activeEventInCodeIndex={this.props.activeEventInCodeIndex}
               key={event.index}
               eventIndex={event.index}
               fullLog={this.props.fullLog}
@@ -570,6 +591,7 @@ const InstrumentorOverview = React.createClass({
     return {
       activeEventIndex: null,
       lockedEventIndex: null,
+      activeEventInCodeIndex: null,
     };
   },
 
@@ -583,8 +605,12 @@ const InstrumentorOverview = React.createClass({
     );
   },
 
-  _handleSelectActiveCode(index) {
+  _handleSelectLockedCode(index) {
     this.setState({ activeEventIndex: index, lockedEventIndex: index });
+  },
+
+  _handleSelectActiveInCode(index) {
+    this.setState({ activeEventInCodeIndex: index });
   },
 
   render() {
@@ -595,6 +621,10 @@ const InstrumentorOverview = React.createClass({
     if (this.state.lockedEventIndex !== null) {
       activeEvent = this.props.fullLog.events[this.state.lockedEventIndex];
     }
+
+    const activeEventInCode =
+      this.state.activeEventInCodeIndex &&
+      this.props.fullLog.events[this.state.activeEventInCodeIndex];
 
     return (
       <div
@@ -607,6 +637,7 @@ const InstrumentorOverview = React.createClass({
           <a onClick={this.props.onClose}>(close)</a>
         </div>
         <InstrumentorStackedMap
+          activeEventInCodeIndex={this.state.activeEventInCodeIndex}
           fullLog={this.props.fullLog}
           lockedEventIndex={this.state.lockedEventIndex}
           onSelectActive={this._handleSelectActive}
@@ -615,13 +646,17 @@ const InstrumentorOverview = React.createClass({
         {activeEvent &&
           <InstrumentorCode
             activeEvent={activeEvent}
+            activeEventInCode={activeEventInCode &&
+              activeEventInCode.snippetName === activeEvent.snippetName &&
+              activeEventInCode}
             snippetSplitByLines=
               {this.props.fullLog.snippetsSplitByLines[activeEvent.snippetName]}
             eventsInSnippet={this.props.fullLog.
               eventsBySnippet[activeEvent.snippetName]}
             key={this.props.fullLog.
               eventsBySnippet[activeEvent.snippetName].length}
-            onSelectActive={this._handleSelectActiveCode}
+            onSelectActiveInCode={this._handleSelectActiveInCode}
+            onSelectLocked={this._handleSelectLockedCode}
           />
         }
       </div>
