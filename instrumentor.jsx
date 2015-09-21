@@ -438,9 +438,21 @@ const InstrumentorStackedMapPoint = React.createClass({
       if (subEvent.stackingLevel === event.stackingLevel + 1) {
         subEvents.push(
           <InstrumentorStackedMapPoint
-            {...this.props}
             key={index}
             eventIndex={index}
+            activeEventInCodeIndex={
+              this.props.activeEventInCodeIndex >= index &&
+                this.props.activeEventInCodeIndex <= this._lastEventIndexBelowThis && // Good approximation
+                  this.props.activeEventInCodeIndex
+            }
+            fullLog={this.props.fullLog}
+            onSelectActive={this.props.onSelectActive}
+            searchFilter={this.props.searchFilter}
+            lockedEventIndex={
+              this.props.lockedEventIndex >= index &&
+                this.props.lockedEventIndex <= this._lastEventIndexBelowThis && // Good approximation
+                  this.props.lockedEventIndex
+            }
           />
         );
       }
