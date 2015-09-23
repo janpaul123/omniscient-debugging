@@ -887,19 +887,23 @@ const Instrumentor = {
 
 if (!window.Instrumentor) {
   // window.Instrumentor is accessible to any code, but you're not supposed to
-  // call functions on it. Instead use window.instrumentCodeGroup (see below).
+  // call functions on it. Instead use the functions below.
   window.Instrumentor = Instrumentor;
 
-  window.instrumentCodeGroup = (name, description='', callback=null) => {
+  window.instrumentEvent = (name, description) => {
+    const snippetName = 'window.instrumentEvent(' + name + ')';
+    window.Instrumentor.addSnippet(snippetName, description);
+    window.Instrumentor.logStatement(snippetName, 0, 0, 0, 0);
+  },
+
+  window.instrumentCodeGroup = (name, description, callback) => {
     const snippetName = 'window.instrumentCodeGroup(' + name + ')';
     window.Instrumentor.addSnippet(snippetName, description);
 
-    if (callback) {
+    return function() {
       window.Instrumentor.logFunctionStart(snippetName, 0, 0, 0, 0, 0);
-      window.Instrumentor.logFunctionEnd(snippetName, 0, 0, 0, 0, 0, callback());
-    } else {
-      window.Instrumentor.logStatement(snippetName, 0, 0, 0, 0);
-    }
+      window.Instrumentor.logFunctionEnd(snippetName, 0, 0, 0, 0, 0, callback.apply(this, arguments));
+    };
   }
 
   // Only use specifically when wrapping a top-level call, because otherwise
@@ -908,10 +912,12 @@ if (!window.Instrumentor) {
     const snippetName = 'window.instrumentCodeGroupAsync(' + name + ')';
     window.Instrumentor.addSnippet(snippetName, description);
 
-    window.Instrumentor.logFunctionStart(snippetName, 0, 0, 0, 0, 0);
-    const result = callback();
-    window.setTimeout(() => window.Instrumentor
-      .logFunctionEnd(snippetName, 0, 0, 0, 0, 0, result), 0);
+    return function() {
+      window.Instrumentor.logFunctionStart(snippetName, 0, 0, 0, 0, 0);
+      const result = callback.apply(this, arguments);
+      window.setTimeout(() => window.Instrumentor
+        .logFunctionEnd(snippetName, 0, 0, 0, 0, 0, result), 0);
+    };
   }
 
   document.addEventListener('DOMContentLoaded', () => {

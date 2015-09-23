@@ -59,7 +59,7 @@ if(module.hot) {
             console.log("[HMR] App is up to date.");
           }
         });
-      });
+      })();
     });
   };
   var addEventListener = window.addEventListener ? function(eventName, listener) {
