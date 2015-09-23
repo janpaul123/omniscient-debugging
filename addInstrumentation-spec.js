@@ -63,7 +63,7 @@ describe('addInstrumentation', function() {
     expect(addInstrumentation('test', `
       someFunc();
     `)).toContain(`
-      (__odLogFnStart(1,6,1,16), __odLogFnEnd(1,6,1,16, someFunc()));
+      (__odLogFnStart(1,6,1,16,0), __odLogFnEnd(1,6,1,16,0, someFunc()));
     `);
   });
 
@@ -74,9 +74,9 @@ describe('addInstrumentation', function() {
         return a + b + c;
       }
     `)).toContain(`
-      var someFunc = function(a,b,c) {__odLogFnStart(1,21,3,7,{a:a,b:b,c:c});var __odResult;try {__odResult = (function(a, b, c) {
+      var someFunc = function(a,b,c) {__odLogFnStart(1,21,3,7,0,{a:a,b:b,c:c});var __odResult;try {__odResult = (function(a, b, c) {
         {__odLogStmt(2,8,2,25);return a + b + c;}
-      }).apply(this, arguments);}catch (e) { __odLogErr(e); }return __odLogFnEnd(1,21,3,7, __odResult);}
+      }).apply(this, arguments);}catch (e) { __odLogErr(e); }return __odLogFnEnd(1,21,3,7,0, __odResult);}
     `);
   });
 });

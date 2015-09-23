@@ -344,10 +344,6 @@ const InstrumentorStackedMapPoint = React.createClass({
   //   lockedEventIndex: PropTypes.number,
   // },
 
-  mixins: [
-    PureRenderMixin,
-  ],
-
   getInitialState() {
     return {
       expanded: false,
@@ -356,14 +352,6 @@ const InstrumentorStackedMapPoint = React.createClass({
   },
 
   componentWillMount() {
-    const events = this.props.fullLog.events;
-    const event = events[this.props.eventIndex];
-    for (let index = event.index + 1; index < events.length; index++) {
-      if (events[index].stackingLevel <= event.stackingLevel) {
-        this._lastEventIndexBelowThis = index - 1;
-        break;
-      }
-    }
     this._expandIfLockedEventIndexIsBelowThis(this.props.lockedEventIndex);
   },
 
@@ -371,6 +359,32 @@ const InstrumentorStackedMapPoint = React.createClass({
     if (nextProps.lockedEventIndex !== this.props.lockedEventIndex) {
       this._expandIfLockedEventIndexIsBelowThis(nextProps.lockedEventIndex);
     }
+  },
+
+  shouldComponentUpdate(nextProps, nextState) {
+    if (nextProps.eventIndex !== this.props.eventIndex) {
+      throw new Error('eventIndex different in <InstrumentorStackedMapPoint shouldComponentUpdate>');
+    }
+    if (nextProps.fullLog !== this.props.fullLog) {
+      throw new Error('fullLog different in <InstrumentorStackedMapPoint shouldComponentUpdate>');
+    }
+    if (nextProps.onSelectActive !== this.props.onSelectActive) {
+      throw new Error('onSelectActive different in <InstrumentorStackedMapPoint shouldComponentUpdate>');
+    }
+    if (nextState.expanded !== this.state.expanded ||
+        nextState.moreLinkHovering !== this.state.moreLinkHovering ||
+        nextProps.searchFilter !== this.props.searchFilter) {
+      return true;
+    }
+    if (this._normalizedSubEventIndex(nextProps.activeEventInCodeIndex) !==
+        this._normalizedSubEventIndex(this.props.activeEventInCodeIndex)) {
+      return true;
+    }
+    if (this._normalizedSubEventIndex(nextProps.lockedEventIndex) !==
+        this._normalizedSubEventIndex(this.props.lockedEventIndex)) {
+      return true;
+    }
+    return false;
   },
 
   componentDidMount() {
@@ -381,9 +395,35 @@ const InstrumentorStackedMapPoint = React.createClass({
     this._scrollIntoViewIfNeeded();
   },
 
+  _normalizedSubEventIndex(subEventIndex) {
+    if (subEventIndex === null || subEventIndex < this.props.eventIndex ||
+        subEventIndex > this._lastEventIndexBelowThis()) {
+      return null;
+    }
+
+    return subEventIndex;
+  },
+
+  _lastEventIndexBelowThis() {
+    const events = this.props.fullLog.events;
+    let lastEventIndexBelowThis = this.props.eventIndex;
+    let event = events[lastEventIndexBelowThis];
+    while (event.nextStackingLevelEventIndices.length > 0) {
+      lastEventIndexBelowThis =
+        event.nextStackingLevelEventIndices[event.nextStackingLevelEventIndices.length - 1];
+      event = events[lastEventIndexBelowThis];
+    }
+
+    this._lastEventIndexBelowThis = () => lastEventIndexBelowThis;
+    return lastEventIndexBelowThis;
+  },
+
   _expandIfLockedEventIndexIsBelowThis(lockedEventIndex) {
-    if (lockedEventIndex > this.props.eventIndex &&
-        lockedEventIndex <= this._lastEventIndexBelowThis) {
+    const normalizedLockedEventIndex =
+      this._normalizedSubEventIndex(lockedEventIndex);
+
+    if (normalizedLockedEventIndex !== null &&
+        normalizedLockedEventIndex !== this.props.eventIndex) {
       this.setState({ expanded: true });
     }
   },
@@ -415,7 +455,8 @@ const InstrumentorStackedMapPoint = React.createClass({
 
   _shouldShowSubEvents(subEvents) {
     return this.state.expanded || subEvents.length === 0 ||
-      this._eventsLeftInSubEvents(subEvents) < 15;
+      // this._eventsLeftInSubEvents(subEvents) < 15;
+      this._eventsLeftInSubEvents(subEvents) < 5;
   },
 
   _eventsLeftInSubEvents(subEvents) {
@@ -427,36 +468,22 @@ const InstrumentorStackedMapPoint = React.createClass({
     const events = this.props.fullLog.events;
     const event = events[this.props.eventIndex];
     const subEvents = [];
+    const activeEventInCodeIndex =
+      this._normalizedSubEventIndex(this.props.activeEventInCodeIndex);
+    const lockedEventIndex =
+      this._normalizedSubEventIndex(this.props.lockedEventIndex);
 
-    for (let index = event.index + 1; index < events.length; index++) {
-      const subEvent = events[index];
-
-      if (subEvent.stackingLevel <= event.stackingLevel) {
-        break;
-      }
-
-      if (subEvent.stackingLevel === event.stackingLevel + 1) {
-        subEvents.push(
-          <InstrumentorStackedMapPoint
-            key={index}
-            eventIndex={index}
-            activeEventInCodeIndex={
-              this.props.activeEventInCodeIndex >= index &&
-                this.props.activeEventInCodeIndex <= this._lastEventIndexBelowThis && // Good approximation
-                  this.props.activeEventInCodeIndex
-            }
-            fullLog={this.props.fullLog}
-            onSelectActive={this.props.onSelectActive}
-            searchFilter={this.props.searchFilter}
-            lockedEventIndex={
-              this.props.lockedEventIndex >= index &&
-                this.props.lockedEventIndex <= this._lastEventIndexBelowThis && // Good approximation
-                  this.props.lockedEventIndex
-            }
-          />
-        );
-      }
-    }
+    event.nextStackingLevelEventIndices.forEach(index => subEvents.push(
+      <InstrumentorStackedMapPoint
+        key={index}
+        eventIndex={index}
+        activeEventInCodeIndex={activeEventInCodeIndex}
+        fullLog={this.props.fullLog}
+        onSelectActive={this.props.onSelectActive}
+        searchFilter={this.props.searchFilter}
+        lockedEventIndex={lockedEventIndex}
+      />
+    ));
 
     const shouldShowSubEvents = this._shouldShowSubEvents(subEvents);
     const searchFilterRegex = new RegExp(this.props.searchFilter, 'i');
@@ -464,7 +491,7 @@ const InstrumentorStackedMapPoint = React.createClass({
     let moreSearchResultsInSubEvents = false;
     if (this.props.searchFilter.length > 0 &&
         subEvents.length > 0 && !shouldShowSubEvents) {
-      for (let index = event.index + 1; index <= this._lastEventIndexBelowThis; index++) {
+      for (let index = event.index + 1; index <= this._lastEventIndexBelowThis(); index++) {
         if (searchFilterRegex.test(events[index].snippetName)) {
           moreSearchResultsInSubEvents = true;
           break;
@@ -473,10 +500,12 @@ const InstrumentorStackedMapPoint = React.createClass({
     }
 
     const showEventInCodeGlow =
-      this.props.activeEventInCodeIndex === this.props.eventIndex ||
-      (!shouldShowSubEvents &&
-        this.props.activeEventInCodeIndex > this.props.eventIndex &&
-        this.props.activeEventInCodeIndex <= this._lastEventIndexBelowThis);
+      activeEventInCodeIndex !== null && (
+        activeEventInCodeIndex === this.props.eventIndex ||
+        (!shouldShowSubEvents &&
+          activeEventInCodeIndex > this.props.eventIndex &&
+          activeEventInCodeIndex <= this._lastEventIndexBelowThis())
+      );
 
     return (
       <div
@@ -495,7 +524,7 @@ const InstrumentorStackedMapPoint = React.createClass({
               event.snippetName) || moreSearchResultsInSubEvents ? 1 : 0.25),
             position: 'relative',
             marginBottom: 2,
-            border: this.props.lockedEventIndex === this.props.eventIndex ?
+            border: lockedEventIndex === this.props.eventIndex ?
               '1px solid black' : 'none',
             boxShadow: showEventInCodeGlow ? '0 0 5px 5px yellow' : '',
             zIndex: showEventInCodeGlow ? 1 : 0,
@@ -707,18 +736,16 @@ const InstrumentorSummary = React.createClass({
         onClick={(e) => e.stopPropagation()}
       >
         <div onClick={() => this.setState({ openedLog: fullLog })}>
-          {fullLog.events
-            .filter(event => event.stackingLevel === 0)
-            .map(event =>
-              <div
-                key={event.index}
-                style={{
-                  display: 'inline-block',
-                  height: 3,
-                  width: 3,
-                  background: stringToColor(event.snippetName),
-                }}
-              />
+          {fullLog.topLevelEvents.map(event =>
+            <div
+              key={event.index}
+              style={{
+                display: 'inline-block',
+                height: 3,
+                width: 3,
+                background: stringToColor(event.snippetName),
+              }}
+            />
           )}
         </div>
         {this.state.openedLog &&
@@ -736,52 +763,63 @@ const Instrumentor = {
   _snippetsSplitByLines: {},
   _eventsBySnippet: {},
   _events: [],
-  _stackingSnippetNameAndLine: [],
+  _eventIndexStack: [],
   _cachedFullLog: null,
+  _topLevelEvents: [],
 
   addSnippet(name, snippet) {
     this._snippetsSplitByLines[name] = snippet.split('\n');
     this._eventsBySnippet[name] = [];
   },
 
-  logStatement(snippetName, startLine, startColumn, endLine, endColumn, annotations) {
+  logStatement(snippetName, startLine, startColumn, endLine, endColumn, identifier, annotations) {
     const maxLine = this._snippetsSplitByLines[snippetName].length - 1;
 
     const event = {
       snippetName,
       annotations,
+      identifier,
       time: new Date().toTimeString(),
       index: this._events.length,
-      stackingLevel: this._stackingSnippetNameAndLine.length,
+      stackingLevel: this._eventIndexStack.length,
       startColumn, endColumn,
       // Clamp lines because they may be out of range because of function
       // wrapping in addInstrumentation.js.
       startLine: Math.max(0, Math.min(maxLine, startLine)),
       endLine: Math.max(0, Math.min(maxLine, endLine)),
+      nextStackingLevelEventIndices: [],
     };
     this._events.push(event);
     this._eventsBySnippet[snippetName].push(event);
+    if (event.stackingLevel > 0) {
+      this._events[this._eventIndexStack[event.stackingLevel - 1]]
+        .nextStackingLevelEventIndices.push(event.index);
+    } else {
+      this._topLevelEvents.push(event);
+    }
   },
 
-  logFunctionStart(snippetName, startLine, startColumn, endLine, endColumn, params) {
+  logFunctionStart(snippetName, startLine, startColumn, endLine, endColumn, funcId, params) {
     const annotations = this._prettyFormatVariables(params);
-    this.logStatement(snippetName, startLine, startColumn, endLine, endColumn, annotations);
-    this._stackingSnippetNameAndLine.push(snippetName + ':' + startLine);
+    this.logStatement(snippetName, startLine, startColumn, endLine, endColumn,
+      snippetName + ':' + funcId, annotations);
+    this._eventIndexStack.push(this._events.length - 1);
   },
 
-  logFunctionEnd(snippetName, startLine, startColumn, endLine, endColumn, result) {
-    while (this._stackingSnippetNameAndLine[this.
-        _stackingSnippetNameAndLine.length - 1] !== snippetName + ':' + startLine) {
+  logFunctionEnd(snippetName, startLine, startColumn, endLine, endColumn, funcId, result) {
+    while (this._events[this._eventIndexStack[this._eventIndexStack.length - 1]]
+             .identifier !== snippetName + ':' + funcId) {
       // probably an error was thrown somewhere
-      const missedCall = this._stackingSnippetNameAndLine.pop();
+      const missedCall = this._events[this._eventIndexStack.pop()];
 
-      const warning = 'Instrumentor.logFunctionEnd missed: ' + missedCall;
+      const warning = 'Instrumentor.logFunctionEnd missed: ' +
+        missedCall.snippetName + ':' + missedCall.startLine;
       const warningSnippetName = uniqueId('internalWarning');
       this.addSnippet(warningSnippetName, warning);
       this.logStatement(warningSnippetName, 0, 0, 0, 0);
       window.console.warn(warning);
     }
-    this._stackingSnippetNameAndLine.pop();
+    this._eventIndexStack.pop();
     return result;
   },
 
@@ -801,6 +839,7 @@ const Instrumentor = {
         snippetsSplitByLines: this._snippetsSplitByLines,
         events: this._events,
         eventsBySnippet: this._eventsBySnippet,
+        topLevelEvents: this._topLevelEvents,
       };
     }
     return this._cachedFullLog;
@@ -856,8 +895,8 @@ if (!window.Instrumentor) {
     window.Instrumentor.addSnippet(snippetName, description);
 
     if (callback) {
-      window.Instrumentor.logFunctionStart(snippetName, 0, 0, 0, 0);
-      window.Instrumentor.logFunctionEnd(snippetName, 0, 0, 0, 0, callback());
+      window.Instrumentor.logFunctionStart(snippetName, 0, 0, 0, 0, 0);
+      window.Instrumentor.logFunctionEnd(snippetName, 0, 0, 0, 0, 0, callback());
     } else {
       window.Instrumentor.logStatement(snippetName, 0, 0, 0, 0);
     }
@@ -869,10 +908,10 @@ if (!window.Instrumentor) {
     const snippetName = 'window.instrumentCodeGroupAsync(' + name + ')';
     window.Instrumentor.addSnippet(snippetName, description);
 
-    window.Instrumentor.logFunctionStart(snippetName, 0, 0, 0, 0);
+    window.Instrumentor.logFunctionStart(snippetName, 0, 0, 0, 0, 0);
     const result = callback();
     window.setTimeout(() => window.Instrumentor
-      .logFunctionEnd(snippetName, 0, 0, 0, 0, result), 0);
+      .logFunctionEnd(snippetName, 0, 0, 0, 0, 0, result), 0);
   }
 
   document.addEventListener('DOMContentLoaded', () => {

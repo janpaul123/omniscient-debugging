@@ -11,7 +11,7 @@ function executableFromInput(input) {
   }
 }
 
-function walk(snippetName, node) {
+function walk(identifiers, node) {
   // Convert 1-indexed lines to 0-indexed (columns are 0-indexed)
   // Also account for function wrapping around each file, `wrappedExecutable`.
   var location =
@@ -28,9 +28,10 @@ function walk(snippetName, node) {
     }
   } else if (node.type === 'CallExpression') {
     node.update(
-      '(__odLogFnStart(' + location + '), ' +
-        '__odLogFnEnd(' + location + ', ' + node.source() + '))'
+      '(__odLogFnStart(' + location + ',' + identifiers.funcId + '), ' +
+        '__odLogFnEnd(' + location + ',' + identifiers.funcId + ', ' + node.source() + '))'
     );
+    identifiers.funcId++;
   } else if (node.type === 'FunctionExpression') {
     var params = node.params.map(function(paramNode) {return paramNode.name; });
     var paramsObject = '{' + params.map(function(param) {
@@ -38,13 +39,14 @@ function walk(snippetName, node) {
 
     node.update(
       'function(' + params.join(',') + ') {' +
-        '__odLogFnStart(' + location + ',' + paramsObject + ');' +
+        '__odLogFnStart(' + location + ',' + identifiers.funcId + ',' + paramsObject + ');' +
         'var __odResult;' +
         'try {__odResult = (' + node.source() + ').apply(this, arguments);}' +
           'catch (e) { __odLogErr(e); }' +
-        'return __odLogFnEnd(' + location + ', __odResult);' +
+        'return __odLogFnEnd(' + location + ',' + identifiers.funcId + ', __odResult);' +
       '}'
     );
+    identifiers.funcId++;
   }
 }
 
@@ -62,10 +64,12 @@ module.exports = function addInstrumentation(name, input) {
   // and not pollute the global timeline too much.
   var wrappedExecutable = '(function() {\n' + executable + '\n}).apply(this);';
 
+  var identifiers = { funcId: 0 };
+
   var instrumentedExecutable = falafel(
     wrappedExecutable,
     { locations: true },
-    walk.bind(null, name)
+    walk.bind(null, identifiers)
   ).toString();
 
   var bind = '.bind(window.Instrumentor, ' + JSON.stringify(name) + ')';
