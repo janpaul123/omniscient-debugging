@@ -114,9 +114,9 @@ const InstrumentorCodeEvents = React.createClass({
     const localEventIndexOfActiveEvent = indexOf(this.props.eventsInSnippet
       .map(event => event.index), this.props.activeEventIndex, true);
     const firstLocalEventIndex =
-      Math.max(0, localEventIndexOfActiveEvent - (500 / 2));
+      Math.max(0, localEventIndexOfActiveEvent - (EVENTS_SHOWN / 2));
     const displayedEvents = this.props.eventsInSnippet
-      .slice(firstLocalEventIndex, firstLocalEventIndex + 500);
+      .slice(firstLocalEventIndex, firstLocalEventIndex + EVENTS_SHOWN);
 
     let eventLeftPosition = 500;
 
