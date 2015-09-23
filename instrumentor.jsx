@@ -31,15 +31,15 @@ function stringToColor(string, opacity=1) {
 }
 
 const InstrumentorCodeEvent = React.createClass({
-  propTypes: {
-    background: PropTypes.string,
-    endLine: PropTypes.number.isRequired,
-    leftPosition: PropTypes.number.isRequired,
-    localEventIndex: PropTypes.number.isRequired,
-    onLocalEventIndexChange: PropTypes.func.isRequired,
-    onLocalEventClick: PropTypes.func.isRequired,
-    startLine: PropTypes.number.isRequired,
-  },
+  // propTypes: {
+  //   background: PropTypes.string,
+  //   endLine: PropTypes.number.isRequired,
+  //   leftPosition: PropTypes.number.isRequired,
+  //   localEventIndex: PropTypes.number.isRequired,
+  //   onLocalEventIndexChange: PropTypes.func.isRequired,
+  //   onLocalEventClick: PropTypes.func.isRequired,
+  //   startLine: PropTypes.number.isRequired,
+  // },
 
   mixins: [
     PureRenderMixin,
@@ -77,13 +77,13 @@ const InstrumentorCodeEvent = React.createClass({
 });
 
 const InstrumentorCodeEvents = React.createClass({
-  propTypes: {
-    activeEventIndex: PropTypes.number.isRequired,
-    eventsInSnippet: PropTypes.array.isRequired,
-    localEventIndex: PropTypes.number,
-    onSelectLocked: PropTypes.func.isRequired,
-    onLocalEventIndexChange: PropTypes.func.isRequired,
-  },
+  // propTypes: {
+  //   activeEventIndex: PropTypes.number.isRequired,
+  //   eventsInSnippet: PropTypes.array.isRequired,
+  //   localEventIndex: PropTypes.number,
+  //   onSelectLocked: PropTypes.func.isRequired,
+  //   onLocalEventIndexChange: PropTypes.func.isRequired,
+  // },
 
   mixins: [
     PureRenderMixin,
@@ -164,30 +164,30 @@ const InstrumentorCodeEvents = React.createClass({
 });
 
 const InstrumentorCode = React.createClass({
-  propTypes: {
-    snippetSplitByLines: PropTypes.array.isRequired,
-    activeEvent: PropTypes.shape({
-      annotations: PropTypes.string,
-      snippetName: PropTypes.string.isRequired,
-      index: PropTypes.number.isRequired,
-      startLine: PropTypes.number.isRequired,
-      startColumn: PropTypes.number.isRequired,
-      endLine: PropTypes.number.isRequired,
-      endColumn: PropTypes.number.isRequired,
-    }).isRequired,
-    activeEventInCode: PropTypes.shape({
-      annotations: PropTypes.string,
-      snippetName: PropTypes.string.isRequired,
-      index: PropTypes.number.isRequired,
-      startLine: PropTypes.number.isRequired,
-      startColumn: PropTypes.number.isRequired,
-      endLine: PropTypes.number.isRequired,
-      endColumn: PropTypes.number.isRequired,
-    }),
-    eventsInSnippet: PropTypes.array.isRequired,
-    onSelectActiveInCode: PropTypes.func.isRequired,
-    onSelectLocked: PropTypes.func.isRequired,
-  },
+  // propTypes: {
+  //   snippetSplitByLines: PropTypes.array.isRequired,
+  //   activeEvent: PropTypes.shape({
+  //     annotations: PropTypes.string,
+  //     snippetName: PropTypes.string.isRequired,
+  //     index: PropTypes.number.isRequired,
+  //     startLine: PropTypes.number.isRequired,
+  //     startColumn: PropTypes.number.isRequired,
+  //     endLine: PropTypes.number.isRequired,
+  //     endColumn: PropTypes.number.isRequired,
+  //   }).isRequired,
+  //   activeEventInCode: PropTypes.shape({
+  //     annotations: PropTypes.string,
+  //     snippetName: PropTypes.string.isRequired,
+  //     index: PropTypes.number.isRequired,
+  //     startLine: PropTypes.number.isRequired,
+  //     startColumn: PropTypes.number.isRequired,
+  //     endLine: PropTypes.number.isRequired,
+  //     endColumn: PropTypes.number.isRequired,
+  //   }),
+  //   eventsInSnippet: PropTypes.array.isRequired,
+  //   onSelectActiveInCode: PropTypes.func.isRequired,
+  //   onSelectLocked: PropTypes.func.isRequired,
+  // },
 
   mixins: [
     PureRenderMixin,
@@ -335,14 +335,14 @@ const InstrumentorCode = React.createClass({
 });
 
 const InstrumentorStackedMapPoint = React.createClass({
-  propTypes: {
-    activeEventInCodeIndex: PropTypes.number,
-    eventIndex: PropTypes.number.isRequired,
-    fullLog: PropTypes.object.isRequired,
-    onSelectActive: PropTypes.func.isRequired,
-    searchFilter: PropTypes.string.isRequired,
-    lockedEventIndex: PropTypes.number,
-  },
+  // propTypes: {
+  //   activeEventInCodeIndex: PropTypes.number,
+  //   eventIndex: PropTypes.number.isRequired,
+  //   fullLog: PropTypes.object.isRequired,
+  //   onSelectActive: PropTypes.func.isRequired,
+  //   searchFilter: PropTypes.string.isRequired,
+  //   lockedEventIndex: PropTypes.number,
+  // },
 
   mixins: [
     PureRenderMixin,
@@ -530,13 +530,13 @@ const InstrumentorStackedMapPoint = React.createClass({
 });
 
 const InstrumentorStackedMap = React.createClass({
-  propTypes: {
-    activeEventInCodeIndex: PropTypes.number,
-    fullLog: PropTypes.object.isRequired,
-    onSelectActive: PropTypes.func.isRequired,
-    lockedEventIndex: PropTypes.number,
-    onToggleLock: PropTypes.func.isRequired,
-  },
+  // propTypes: {
+  //   activeEventInCodeIndex: PropTypes.number,
+  //   fullLog: PropTypes.object.isRequired,
+  //   onSelectActive: PropTypes.func.isRequired,
+  //   lockedEventIndex: PropTypes.number,
+  //   onToggleLock: PropTypes.func.isRequired,
+  // },
 
   mixins: [
     PureRenderMixin,
@@ -590,10 +590,10 @@ const InstrumentorStackedMap = React.createClass({
 });
 
 const InstrumentorOverview = React.createClass({
-  propTypes: {
-    fullLog: PropTypes.object.isRequired,
-    onClose: PropTypes.func.isRequired,
-  },
+  // propTypes: {
+  //   fullLog: PropTypes.object.isRequired,
+  //   onClose: PropTypes.func.isRequired,
+  // },
 
   mixins: [
     PureRenderMixin,
