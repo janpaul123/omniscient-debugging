@@ -601,7 +601,7 @@ const InstrumentorStackedMap = React.createClass({
           }}
           onClick={this.props.onToggleLock}
         >
-          {where(this.props.fullLog.events, { stackingLevel: 0 }).map(event =>
+          {this.props.fullLog.topLevelEvents.map(event =>
             <InstrumentorStackedMapPoint
               activeEventInCodeIndex={this.props.activeEventInCodeIndex}
               key={event.index}
