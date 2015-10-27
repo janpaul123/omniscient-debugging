@@ -1,4 +1,5 @@
-const React = require('react/addons');
+const React = require('react');
+const ReactDOM = require('react-dom');
 const { indexOf, uniqueId, where } = require('underscore');
 const chroma = require('chroma-js/chroma');
 
@@ -95,8 +96,8 @@ const InstrumentorCodeEvents = React.createClass({
 
   _scrollToActiveEvent() {
     if (this.refs.events && this.refs.activeEvent) {
-      const eventsElement = React.findDOMNode(this.refs.events);
-      const activeEventElement = React.findDOMNode(this.refs.activeEvent);
+      const eventsElement = ReactDOM.findDOMNode(this.refs.events);
+      const activeEventElement = ReactDOM.findDOMNode(this.refs.activeEvent);
 
       eventsElement.scrollLeft =
         activeEventElement.offsetLeft - eventsElement.clientWidth / 2;
@@ -196,7 +197,7 @@ const InstrumentorCode = React.createClass({
   componentDidMount() {
     this._scrollToFirstLine();
 
-    this._columnWidth = React.findDOMNode(
+    this._columnWidth = ReactDOM.findDOMNode(
       this.refs.hiddenMeasuringDiv).clientWidth / 100;
     // Refresh after first mount since we didn't have _columnWidth yet.
     setTimeout(() => this.forceUpdate());
@@ -220,8 +221,8 @@ const InstrumentorCode = React.createClass({
 
   _scrollToFirstLine() {
     if (this.refs.file && this.refs.firstLine) {
-      const fileElement = React.findDOMNode(this.refs.file);
-      const firstLineElement = React.findDOMNode(this.refs.firstLine);
+      const fileElement = ReactDOM.findDOMNode(this.refs.file);
+      const firstLineElement = ReactDOM.findDOMNode(this.refs.firstLine);
 
       fileElement.scrollTop =
         firstLineElement.offsetTop - fileElement.clientHeight / 2;
@@ -431,7 +432,7 @@ const InstrumentorStackedMapPoint = React.createClass({
   _scrollIntoViewIfNeeded() {
     if (this.props.eventIndex === this.props.lockedEventIndex) {
       if (document.body.scrollIntoViewIfNeeded) {
-        React.findDOMNode(this).scrollIntoViewIfNeeded(true);
+        ReactDOM.findDOMNode(this).scrollIntoViewIfNeeded(true);
       }
     }
   },
@@ -923,6 +924,6 @@ if (!window.Instrumentor) {
   document.addEventListener('DOMContentLoaded', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    React.render(<InstrumentorSummary/>, container);
+    ReactDOM.render(<InstrumentorSummary/>, container);
   });
 }
