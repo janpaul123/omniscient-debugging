@@ -16,7 +16,8 @@
   "peerDependencies": {
     "chroma-js": "^1.1.1",
     "falafel": "^1.2.0",
-    "react": "^0.13.0",
+    "react": "^0.14.0",
+    "react-dom": "^0.14.0",
     "underscore": "^1.8.3"
   }
 }
