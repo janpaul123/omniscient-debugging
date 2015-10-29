@@ -1,6 +1,6 @@
 {
   "name": "omniscient-debugging",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Omniscient Debugging experiment",
   "main": "addInstrumentation.js",
   "repository": {
